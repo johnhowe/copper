@@ -16,7 +16,7 @@ main() {
     useradd -m $user
 
     # rustup + xargo
-    local tag=v0.1.7
+    local tag=v0.1.8
     local url=https://github.com/japaric/xargo/releases/download/$tag/xargo-$tag-x86_64-unknown-linux-gnu.tar.gz \
 
     su -l -c "
