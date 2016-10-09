@@ -1,0 +1,187 @@
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title></title>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <base href="../">
+
+        <link rel="stylesheet" href="book.css">
+        <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+        <link rel="shortcut icon" href="favicon.png">
+
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+
+        <!-- MathJax -->
+        <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Fetch JQuery from CDN but have a local fallback -->
+        <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script>
+            if (typeof jQuery == 'undefined') {
+                document.write(unescape("%3Cscript src='jquery.js'%3E%3C/script%3E"));
+            }
+        </script>
+    </head>
+    <body class="light">
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme = localStorage.getItem('theme');
+            if (theme == null) { theme = 'light'; }
+            $('body').removeClass().addClass(theme);
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var sidebar = localStorage.getItem('sidebar');
+            if (sidebar === "hidden") { $("html").addClass("sidebar-hidden") }
+            else if (sidebar === "visible") { $("html").addClass("sidebar-visible") }
+        </script>
+
+        <div id="sidebar" class="sidebar">
+            <ul class="chapter"><li><a href="./intro.html"><strong>1.</strong> Introduction</a></li><li><ul class="section"><li><a href="./audience.html"><strong>1.1.</strong> Audience</a></li><li><a href="./why-rust.html"><strong>1.2.</strong> Why Rust?</a></li><li><a href="./why-arm.html"><strong>1.3.</strong> Why ARM Cortex-M micros?</a></li><li><a href="./what-dev-board.html"><strong>1.4.</strong> What dev board should I use/get?</a></li></ul></li><li><a href="./tools.html"><strong>2.</strong> Setting up a development environment</a></li><li><ul class="section"><li><a href="./linux.html"><strong>2.1.</strong> Linux</a></li><li><a href="./macos.html"><strong>2.2.</strong> macOS</a></li><li><a href="./windows.html"><strong>2.3.</strong> Windows</a></li></ul></li><li><a href="./first/prog.html"><strong>3.</strong> First program</a></li><li><ul class="section"><li><a href="./first/build.html"><strong>3.1.</strong> Build &amp; inspect</a></li><li><a href="./first/qemu.html"><strong>3.2.</strong> Run it under QEMU</a></li><li><a href="./details.html"><strong>3.3.</strong> Nitty-gritty details</a></li><li><ul class="section"><li><a href="./details/target.html" class="active"><strong>3.3.1.</strong> Target specification</a></li><li><a href="./details/boot.html"><strong>3.3.2.</strong> Boot process</a></li><li><a href="./details/ld.html"><strong>3.3.3.</strong> Linker script</a></li></ul></li><li><a href="./first/flash.html"><strong>3.4.</strong> Run it on real hardware</a></li></ul></li><li><a href="./exceptions.html"><strong>4.</strong> Exceptions: Crashing your micro</a></li><li><a href="./blink.html"><strong>5.</strong> Blinking an LED</a></li><li class="spacer"></li><li class="affix">Work In Progress chapters</li><li class="affix"><a href="./optimize.html">(Mis)Optimization</a></li><li class="affix"><a href="registers.html">Zero-cost type-safe register manipulation</a></li><li class="affix"><a href="hal.html">Abstracting Hardware</a></li><li class="affix"><a href="./peripherals.html">Peripherals</a></li><li class="spacer"></li><li class="affix"><a href="./unwritten.html">Unwritten topics</a></li><li class="spacer"></li><li class="affix"><a href="./resources.html">Resources</a></li><li class="affix"><a href="./faq.html">FAQ</a></li><li class="spacer"></li><li class="affix">Published using mdBook</li></ul>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar" class="menu-bar">
+                    <div class="left-buttons">
+                        <i id="sidebar-toggle" class="fa fa-bars"></i>
+                        <i id="theme-toggle" class="fa fa-paint-brush"></i>
+                    </div>
+
+                    <h1 class="menu-title"></h1>
+
+                    <div class="right-buttons">
+                        <i id="print-button" class="fa fa-print" title="Print this book"></i>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <h1>Target specification</h1>
+<p>In this section, we explain what the mysterious <code>cortex-m3.json</code> file is!</p>
+<p>Building a Rust program for a Cortex-M microcontroller involves cross compiling. Cross compilation
+is the process of building a binary that will run on a <strong>target</strong> device/system that's different
+from the <strong>host</strong> device/system where the binary was produced. In our case, the target is the
+Cortex-M microcontroller and the host is your laptop or your PC.</p>
+<p>Out of the box, <code>rustc</code>, and therefore Cargo, can cross compile for a bunch of different targets
+using the <code>--target</code> flag:</p>
+<pre><code>$ rustc -V
+</code></pre>
+<pre><code>rustc 1.11.0-nightly (ad7fe6521 2016-06-23)
+</code></pre>
+<pre><code>$ rustc --print target-list | column -c 100
+</code></pre>
+<pre><code>aarch64-apple-ios               i686-linux-android              x86_64-apple-darwin
+aarch64-linux-android           i686-pc-windows-gnu             x86_64-apple-ios
+aarch64-unknown-linux-gnu       i686-pc-windows-msvc            x86_64-pc-windows-gnu
+arm-linux-androideabi           i686-unknown-dragonfly          x86_64-pc-windows-msvc
+arm-unknown-linux-gnueabi       i686-unknown-freebsd            x86_64-rumprun-netbsd
+arm-unknown-linux-gnueabihf     i686-unknown-linux-gnu          x86_64-sun-solaris
+armv7-apple-ios                 i686-unknown-linux-musl         x86_64-unknown-bitrig
+armv7-linux-androideabi         le32-unknown-nacl               x86_64-unknown-dragonfly
+armv7-unknown-linux-gnueabihf   mips-unknown-linux-gnu          x86_64-unknown-freebsd
+armv7s-apple-ios                mips-unknown-linux-musl         x86_64-unknown-linux-gnu
+asmjs-unknown-emscripten        mipsel-unknown-linux-gnu        x86_64-unknown-linux-musl
+i386-apple-ios                  mipsel-unknown-linux-musl       x86_64-unknown-netbsd
+i586-pc-windows-msvc            powerpc-unknown-linux-gnu       x86_64-unknown-openbsd
+i586-unknown-linux-gnu          powerpc64-unknown-linux-gnu
+i686-apple-darwin               powerpc64le-unknown-linux-gnu
+</code></pre>
+<p>Unfortunately, Cortex-M microcontrollers are not in this list. This is not a problem though, because
+we can teach <code>rustc</code> about new targets using target specification files. A target specification
+file is a JSON file that describes the characteristics of the target: its architecture, its OS, etc.
+Currently, documentation about these files is scrambled in the compiler source code. These are the
+relevant documentation bits:</p>
+<ul>
+<li><a href="https://github.com/rust-lang/rust/blob/1ab87b65a220a933dc9d171ef0fd865ddd88fe89/src/librustc_back/target/mod.rs#L11-L45">rustc_back::target</a></li>
+<li><a href="https://github.com/rust-lang/rust/blob/1ab87b65a220a933dc9d171ef0fd865ddd88fe89/src/librustc_back/target/mod.rs#L151-L171">rustc_back::target::Target</a></li>
+<li><a href="https://github.com/rust-lang/rust/blob/1ab87b65a220a933dc9d171ef0fd865ddd88fe89/src/librustc_back/target/mod.rs#L178-L299">rustc_back::target::TargetOptions</a></li>
+</ul>
+<blockquote>
+<p><strong>ATTENTION</strong> These links don't point to the latest revision of the compiler source!</p>
+</blockquote>
+<p>In a <a href="./first/build.html">previous section</a>, I gave you a target specification file: the <code>cortex-m3.json</code>, which
+you used to cross compile for the LM3S6965. That file can be used to cross compile to any micro that
+contains a Cortex-M3 processor. But, if you want to cross compile for a microcontroller that has a
+different processor, you are going to need a different target specification file.</p>
+<p>The list below is a collection of target specification files for all the existing Cortex-M
+processors and their most common variants:</p>
+<ul>
+<li><a href="./target/cortex-m0.json">cortex-m0</a>. Cortex-M0.</li>
+<li><a href="./target/cortex-m0plus.json">cortex-m0plus</a>. Cortex-M0+.</li>
+<li><a href="./target/cortex-m1.json">cortex-m1</a>. Cortex-M1.</li>
+<li><a href="./target/cortex-m3.json">cortex-m3</a>. Cortex-M3.</li>
+<li><a href="./target/cortex-m4.json">cortex-m4</a>. Cortex-M4 without a <a href="https://en.wikipedia.org/wiki/Floating-point_unit">Floating Point Unit</a> (FPU).</li>
+<li><a href="./target/cortex-m4f.json">cortex-m4f</a>. Cortex-M4 with a FPU. Supports single precision FP
+instructions (e.g. <code>vadd.f32</code>).</li>
+<li><a href="./target/cortex-m7.json">cortex-m7</a>. Cortex-M7 without a FPU.</li>
+<li><a href="./target/cortex-m7f.json">cortex-m7f</a>. Cortex-M7 with a FPU. Supports both single and double
+precision FP instructions.</li>
+<li><a href="./target/cortex-m7f-sp.json">cortex-m7f-sp</a>. Cortex-M7 with a FPU. Only supports single precision
+FP instructions.</li>
+</ul>
+<blockquote>
+<p><strong>NOTE</strong> All these targets use the soft float ABI</p>
+</blockquote>
+<p>These files should cover most of your cross compilation needs. To figure out which file you need to
+use for your microcontroller, first check which processor your micro has and whether it has a FPU or
+not, then choose a file from the above list based on its description.</p>
+<p>If you want to know why these files have the contents they have, check <a href="https://github.com/japaric/rfcs/blob/cortex-m-targets/text/0000-cortex-m-targets.md#target-specifications">this RFC</a>. The information
+therein should be useful if you want to tweak these target specification files for some reason.</p>
+
+                </div>
+
+                <!-- Mobile navigation buttons -->
+                
+                    <a href="./details.html" class="mobile-nav-chapters previous">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a href="./details/boot.html" class="mobile-nav-chapters next">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+
+            </div>
+
+            
+                <a href="./details.html" class="nav-chapters previous" title="You can navigate through the chapters using the arrow keys">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+            
+
+            
+                <a href="./details/boot.html" class="nav-chapters next" title="You can navigate through the chapters using the arrow keys">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            
+
+        </div>
+
+
+        <!-- Local fallback for Font Awesome -->
+        <script>
+            if ($(".fa").css("font-family") !== "FontAwesome") {
+                $('<link rel="stylesheet" type="text/css" href="_FontAwesome/css/font-awesome.css">').prependTo('head');
+            }
+        </script>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        
+
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+    </body>
+</html>
